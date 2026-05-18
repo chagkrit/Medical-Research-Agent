@@ -1,0 +1,9 @@
+{
+  "name": "medical-research-pipeline",
+  "version": "0.1.0",
+  "description": "ระบบครบวงจรสำหรับเตรียมข้อมูล วิเคราะห์สถิติทางการแพทย์ และเขียน manuscript วิจัยเพื่อตีพิมพ์ใน Q1/Q2 journal รองรับ RCT, Cohort, Case-Control, Cross-sectional, Survival Analysis และ Diagnostic Accuracy",
+  "author": {
+    "name": "Chagkrit"
+  },
+  "keywords": ["medical", "research", "statistics", "manuscript", "data-preparation", "clinical-research"]
+}

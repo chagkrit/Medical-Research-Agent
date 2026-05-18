@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "pubmed": {
+      "type": "url",
+      "url": "https://pubmed.mcp.claude.com/mcp",
+      "description": "Search biomedical literature from PubMed — แหล่งอ้างอิงหลักสำหรับ Introduction และ Discussion"
+    },
+    "consensus": {
+      "type": "url",
+      "url": "https://mcp.consensus.app/mcp",
+      "description": "Explore scientific research consensus — ตรวจสอบ evidence consensus สำหรับ claims ใน manuscript"
+    },
+    "scholar-gateway": {
+      "type": "url",
+      "url": "https://connector.scholargateway.ai/mcp",
+      "description": "Scholarly research search (Google Scholar / Semantic Scholar) — หา landmark papers และ highly-cited references"
+    }
+  }
+}
