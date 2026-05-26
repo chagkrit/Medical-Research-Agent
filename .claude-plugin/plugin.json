@@ -1,9 +1,31 @@
 {
   "name": "medical-research-pipeline",
-  "version": "0.1.0",
-  "description": "ระบบครบวงจรสำหรับเตรียมข้อมูล วิเคราะห์สถิติทางการแพทย์ และเขียน manuscript วิจัยเพื่อตีพิมพ์ใน Q1/Q2 journal รองรับ RCT, Cohort, Case-Control, Cross-sectional, Survival Analysis และ Diagnostic Accuracy",
+  "version": "1.0.0",
+  "description": "Master Medical Research Plugin — End-to-end bilingual (Thai/English) pipeline for producing Q1/Q2, high-impact-factor manuscripts: data preparation → biostatistics → IMRAD writing → reviewer-grade peer review → journal strategy → submission package → response to reviewers.",
   "author": {
     "name": "Chagkrit"
   },
-  "keywords": ["medical", "research", "statistics", "manuscript", "data-preparation", "clinical-research"]
+  "keywords": [
+    "medical-research",
+    "manuscript",
+    "Q1-journal",
+    "Q2-journal",
+    "high-impact-factor",
+    "biostatistics",
+    "clinical-research",
+    "RCT",
+    "cohort",
+    "case-control",
+    "survival-analysis",
+    "diagnostic-accuracy",
+    "CONSORT",
+    "STROBE",
+    "STARD",
+    "TRIPOD",
+    "PRISMA",
+    "peer-review",
+    "journal-strategy",
+    "ICMJE",
+    "response-to-reviewers"
+  ]
 }

@@ -3,17 +3,17 @@
     "pubmed": {
       "type": "url",
       "url": "https://pubmed.mcp.claude.com/mcp",
-      "description": "Search biomedical literature from PubMed — แหล่งอ้างอิงหลักสำหรับ Introduction และ Discussion"
+      "description": "PubMed/MEDLINE — แหล่งอ้างอิงหลักสำหรับ Introduction, Methods justification และ Discussion (เน้น Q1/Q2 indexed journals)"
     },
     "consensus": {
       "type": "url",
       "url": "https://mcp.consensus.app/mcp",
-      "description": "Explore scientific research consensus — ตรวจสอบ evidence consensus สำหรับ claims ใน manuscript"
+      "description": "Consensus.app — ตรวจสอบ scientific consensus ของทุก claim ใน manuscript (Consensus Meter agree/disagree/inconclusive)"
     },
     "scholar-gateway": {
       "type": "url",
       "url": "https://connector.scholargateway.ai/mcp",
-      "description": "Scholarly research search (Google Scholar / Semantic Scholar) — หา landmark papers และ highly-cited references"
+      "description": "Google Scholar / Semantic Scholar — หา landmark papers, highly-cited references, และงานคลาสสิกที่ขาดหายจาก PubMed"
     }
   }
 }
