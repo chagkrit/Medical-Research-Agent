@@ -5,19 +5,10 @@
   "author": {
     "name": "Chagkrit"
   },
-  "repository": "https://github.com/chagkrit/Master-Research-Assistant",
-  "homepage": "https://github.com/chagkrit/Master-Research-Assistant#readme",
-  "skills": [
-    "skills/master-orchestrator",
-    "skills/data-prep",
-    "skills/medical-stats",
-    "skills/manuscript-writer",
-    "skills/peer-review",
-    "skills/journal-strategy",
-    "skills/submission-package",
-    "skills/response-to-reviewers"
-  ],
-  "mcpConfig": ".mcp.json",
+  "repository": "https://github.com/chagkrit/Medical-Research-Agent",
+  "homepage": "https://github.com/chagkrit/Medical-Research-Agent#readme",
+  "skills": "./skills",
+  "mcpServers": "./.mcp.json",
   "keywords": [
     "medical-research",
     "manuscript",

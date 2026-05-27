@@ -8,6 +8,17 @@
 
 ---
 
+## Claude Code Marketplace Installation
+
+```bash
+claude plugin marketplace add chagkrit/Medical-Research-Agent
+claude plugin install medical-research-pipeline@medical-research-agent
+```
+
+After installation, restart Claude Code so the plugin skills and MCP server configuration are loaded.
+
+---
+
 ## Pipeline Overview
 
 ```

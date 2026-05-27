@@ -1,0 +1,29 @@
+{
+  "name": "medical-research-agent",
+  "description": "Claude Code marketplace for the Medical Research Pipeline plugin.",
+  "owner": {
+    "name": "Chagkrit"
+  },
+  "plugins": [
+    {
+      "name": "medical-research-pipeline",
+      "displayName": "Medical Research Pipeline",
+      "source": "./",
+      "description": "End-to-end bilingual Thai/English medical research pipeline for data preparation, biostatistics, IMRAD manuscripts, peer review, journal strategy, submission packages, and response-to-reviewers.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Chagkrit"
+      },
+      "homepage": "https://github.com/chagkrit/Medical-Research-Agent#readme",
+      "repository": "https://github.com/chagkrit/Medical-Research-Agent",
+      "keywords": [
+        "medical-research",
+        "manuscript",
+        "biostatistics",
+        "clinical-research",
+        "peer-review",
+        "journal-strategy"
+      ]
+    }
+  ]
+}
