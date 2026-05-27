@@ -15,6 +15,8 @@ claude plugin marketplace add chagkrit/Medical-Research-Agent
 claude plugin install medical-research-pipeline@medical-research-agent
 ```
 
+**Marketplace install แบบ persistent:** ติดตั้งครั้งเดียว แล้ว Claude Code จะจำ plugin นี้ไว้ ใช้ได้ใน session ถัด ๆ ไปหลัง restart โดยไม่ต้องใส่ `--plugin-url` หรือ `--plugin-dir` ทุกครั้ง.
+
 If your Claude Code version says `No such command` or does not have plugin marketplace support, load the plugin directly for the current session:
 
 ```bash
