@@ -8,14 +8,26 @@
 
 ---
 
-## Claude Code Marketplace Installation
+## Claude Code Installation
 
 ```bash
 claude plugin marketplace add chagkrit/Medical-Research-Agent
 claude plugin install medical-research-pipeline@medical-research-agent
 ```
 
-After installation, restart Claude Code so the plugin skills and MCP server configuration are loaded.
+If your Claude Code version says `No such command` or does not have plugin marketplace support, load the plugin directly for the current session:
+
+```bash
+claude --plugin-url https://github.com/chagkrit/Medical-Research-Agent/archive/refs/heads/main.zip
+```
+
+For local development from a cloned checkout:
+
+```bash
+claude --plugin-dir /path/to/Medical-Research-Agent
+```
+
+Marketplace installs are persistent. After a marketplace install, restart Claude Code so the plugin skills and MCP server configuration are loaded. `--plugin-url` and `--plugin-dir` load the plugin for that session only.
 
 ---
 
