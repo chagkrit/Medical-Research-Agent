@@ -28,6 +28,21 @@ Output: simulation ที่ใกล้เคียงกับสิ่งท�
 
 ---
 
+## Verification Discipline — ทุกคำวิจารณ์ต้อง "จริงและระบุตำแหน่งได้" ก่อนเป็น comment
+
+จุดพังเฉพาะของ *simulated* reviewer คือ **การกุข้อโต้แย้งอย่างมั่นใจ** — โจมตีว่า "ไม่ได้ทำ sensitivity analysis" ทั้งที่มันอยู่ใน supplement, หรือบอกว่าสถิติผิดโดยไม่เคยตรวจ กฎเหล็ก: **ห้ามยก criticism ที่ยังไม่ได้ verify กับ text / data / guideline จริง**
+
+1. **Anchor-or-drop** — ทุก finding ต้อง quote ตำแหน่งจริง (section / table / บรรทัด). ชี้ตำแหน่งไม่ได้ = ยกไม่ได้ → ไปหาให้เจอ หรือทิ้ง
+2. **เช็กก่อนว่า "สิ่งที่หาย" ไม่ได้อยู่ตรงนั้นจริง** — ก่อนเขียน "ไม่ได้รายงาน X / ไม่ได้ปรับ Y / ไม่มี sensitivity" ให้ค้นทั้ง manuscript **รวม supplement**. ครึ่งหนึ่งของ review ที่ hallucinate คือของที่มีอยู่แล้ว (ต่อยอดจาก Mode 2 column "Location ที่ address แล้ว" และ C1)
+3. **Numeric objection ต้อง recompute ก่อน** — ถ้าจะ claim ว่า estimate / p-value ผิดหรือ implausible ให้ delegate การคำนวณซ้ำแบบ *อิสระ* (subagent) reconcile กับ source ก่อน อย่า assert stat error ที่ยังไม่ได้ trace — unverified stat objection ฆ่า credibility ของ reviewer
+4. **Consistency sweep ตัวเลขทุกที่ที่ปรากฏ** — อ่านผลเดียวกันข้าม Abstract = Results text = Table = figure caption แล้วยืนยันว่ามันขัดกันจริงก่อนรายงาน; ยืนยัน flow-diagram บวกกันลงตัว
+5. **แยก "ผิด" ออกจาก "ฉันชอบอีกแบบ"** — flaw จริง (invalid / unsupported / misreported) ต้องแยกจาก preference. ทำทุกอย่างเป็น "major" = ลายเซ็นของ reviewer ที่ห่วย
+6. **Mark confidence** — ถ้าสงสัยแต่ยืนยันไม่ได้ (ไม่มี raw data) → ส่งเป็น *author query* ไม่ใช่ verdict
+
+> อย่า silently rewrite manuscript — ส่ง finding + fix ให้ผู้เขียนไป apply เอง เว้นแต่ผู้ใช้สั่งให้แก้ · Sequence by severity: fatal/major (design, stats, unsupported claim) ก่อน, cosmetic ท้ายสุด
+
+---
+
 ## Q1 Reviewer Mental Model
 
 Reviewer ของ Q1/Q2 journal จะถามคำถามต่อไปนี้:
@@ -54,8 +69,12 @@ Reviewer ของ Q1/Q2 journal จะถามคำถามต่อไป�
 | "reporting guideline gap" | **Mode 4 — Guideline Gap Analysis** |
 | "stats review" / "biostatistics critique" | **Mode 5 — Statistical Methods Scrutiny** |
 | "blinded review" / "simulate Reviewer 2" | **Mode 6 — Reviewer 2 Simulation** |
+| "claim–evidence" / "claim matrix" / "overclaim audit" | **Mode 7 — Claim↔Evidence Matrix** |
+| "reference audit" / "ตรวจ reference" / "citation check" | **Mode 8 — Reference Ledger Audit** |
 
-> เริ่มต้นทุก peer review ด้วย **Mode 1**; แล้วเสนอ Mode 2–6 ตามผลที่พบ
+> เริ่มต้นทุก peer review ด้วย **Mode 1**; แล้วเสนอ Mode 2–8 ตามผลที่พบ (C5 ไม่ผ่าน → Mode 7, C6 ไม่ผ่าน → Mode 8)
+>
+> ถ้าผู้ใช้ **ได้รับเชิญเป็น reviewer ให้วารสาร** (รีวิวต้นฉบับของคนอื่น) อย่าใช้ skill นี้ → ใช้ `scientific-peer-review` ซึ่งมีขั้นตอนยืนยันสิทธิ์และรักษาความลับ
 
 ---
 
@@ -356,6 +375,81 @@ Minor:
 
 ---
 
+## Mode 7 — Claim↔Evidence Matrix
+
+ต่อยอดจาก C5/C6 และ Anchor-or-drop: ทุก claim สำคัญต้องชี้ไปที่หลักฐานที่ตรวจได้ ไม่ใช่แค่ "ดูสมเหตุสมผล"
+(โครงคอลัมน์และรหัสดัดแปลงจาก K-Dense `peer-review` claim–evidence matrix, MIT License, Copyright (c) 2025 K-Dense Inc.)
+
+**เลือก claim ก่อน:** conclusion ใน Abstract → primary outcome ใน Results → ทุกประโยคที่มี causal / mechanistic language → claim เรื่อง generalization / clinical implication → secondary outcomes
+
+| คอลัมน์ | ใส่อะไร |
+|---|---|
+| `claim_id` | `CL-01`, `CL-02`, ... |
+| `location` | section / ย่อหน้า / บรรทัดจริง (ชี้ไม่ได้ = ตัดทิ้งตาม Anchor-or-drop) |
+| `claim_type` | `primary_outcome` / `secondary_outcome` / `causal` / `mechanistic` / `diagnostic` / `prediction` / `safety` / `generalization` / `methods` / `other` |
+| `claim_summary` | สรุป claim สั้น ๆ |
+| `evidence_ids` | ID ที่ตรวจย้อนได้ คั่นด้วย `;` — row ใน results ledger, `Table2`, `FigS3`, หรือเลข reference (`Ref14`) จาก Mode 8 |
+| `support_level` | `supported` / `partly_supported` / `unsupported` / `not_assessed` |
+| `alignment_issue` | `none` / `direction` / `magnitude` / `population` / `outcome` / `timepoint` / `causal_language` / `scope` / `uncertainty` / `selective_reporting` / `other` |
+| `limitation` | ข้อจำกัดหรือคำอธิบายอื่นที่เกี่ยวข้อง |
+| `requested_action` | สิ่งที่ผู้เขียนต้องแก้ (เช่น เปลี่ยน "reduces" → "was associated with lower") |
+
+**กฎความสอดคล้อง (ใช้ทุกครั้ง):**
+- `supported` ต้องมี `evidence_ids` และ `alignment_issue = none`
+- `partly_supported` ต้องมี `evidence_ids` และต้องระบุ `alignment_issue` ที่ไม่ใช่ `none`
+- `unsupported` ต้องระบุ `alignment_issue`
+- ทุกแถวที่ไม่ใช่ `supported` ต้องมี `requested_action`
+- `causal` / `mechanistic` ที่ให้ `supported` → flag ให้ผู้เชี่ยวชาญยืนยัน (observational design แทบไม่เคย support causal claim)
+- ตัวเลขใน `evidence_ids` ต้องตรงกับ ledger ไม่ใช่ตัวเลขที่อ่านจาก prose
+
+**ตรวจโครงสร้างด้วยสคริปต์ (ไม่บังคับ):** export ตารางเป็น CSV ที่มีหัวคอลัมน์ตรงตามข้างบน แล้วรัน
+`python3 -E -s ~/.claude/skills/scientific-peer-review/scripts/validate_claim_evidence.py <matrix>.csv`
+สคริปต์ตรวจแค่โครงสร้างและกฎข้างบน ไม่ได้ตรวจว่าหลักฐานจริง
+
+Output: ตาราง claim ทั้งหมด → แถวที่ไม่ใช่ `supported` ส่งเข้า Mode 3 (Revision Planner)
+
+---
+
+## Mode 8 — Reference Ledger Audit
+
+ตรวจว่า reference **มีอยู่จริง เมตาดาทาตรง และ support claim ที่อ้างจริง** ไม่ใช่แค่เลขเรียงถูก
+(แนวคิด ledger + `verification_status` ดัดแปลงจาก K-Dense `audit_citations.py`, MIT License, Copyright (c) 2025 K-Dense Inc.)
+
+**Ledger ต่อ reference หนึ่งแถว:**
+
+| คอลัมน์ | ใส่อะไร |
+|---|---|
+| `ref_no` | เลข reference ใน manuscript |
+| `cited_at` | ตำแหน่งที่อ้าง (section / ย่อหน้า) ทุกจุด |
+| `claim_supported` | claim ที่ reference นี้ถูกใช้ support |
+| `first_author`, `year`, `title`, `journal` | ตามที่เขียนใน reference list |
+| `pmid`, `doi` | persistent locator |
+| `verification_status` | `verified_primary` / `verified_secondary` / `not_verified` |
+| `checked_with` | เครื่องมือที่ใช้ตรวจ + วันที่ |
+| `notes` | ความคลาดเคลื่อนที่พบ |
+
+**ความหมายของ status:**
+- `verified_primary` — ดึง record จริงจาก PubMed (PubMed MCP: `lookup_article_by_citation` / `get_article_metadata`) หรือ DOI/Crossref แล้ว ชื่อเรื่อง ผู้แต่ง ปี วารสาร ตรง **และ** อ่าน abstract/full text แล้วว่า support `claim_supported` จริง
+- `verified_secondary` — ยืนยันได้ว่ามีอยู่จริงและเมตาดาทาตรง แต่ยังไม่ได้ยืนยันว่า support claim
+- `not_verified` — ยังไม่ได้ตรวจ หรือหาไม่เจอ → ห้ามรายงานว่าผ่าน
+- ห้ามตั้ง status จากความจำ ต้องมี tool call ที่ดึง record จริงทุกแถว
+
+**ตรวจ:**
+```
+□ ทุกเลขที่อ้างใน text มีใน reference list (ไม่มีเลขลอย)
+□ ทุก reference ใน list ถูกอ้างอย่างน้อยหนึ่งครั้ง
+□ เรียงตามลำดับที่ปรากฏครั้งแรก (Vancouver) และไม่ข้ามเลข
+□ ทุก reference มี PMID หรือ DOI (ไม่มี → flag)
+□ ไม่มี reference ซ้ำในชื่อต่างกัน
+□ ทุก claim ใน Mode 7 ที่อ้าง reference → reference นั้นเป็น verified_primary
+```
+
+> สคริปต์ `audit_citations.py` ของ K-Dense อ่านได้เฉพาะ Markdown ที่ใช้ citation แบบ Pandoc `[@key]` คู่กับ CSV และตรวจแค่ key ตรงกัน ไม่ได้ตรวจว่า reference มีจริงหรือ support claim จึงใช้กับ manuscript .docx ที่อ้างเป็นเลขไม่ได้โดยตรง ให้ใช้ ledger ข้างบนแทน
+
+Output: ledger ครบทุกแถว + สรุปจำนวน verified_primary / verified_secondary / not_verified + รายการที่ต้องแก้
+
+---
+
 ## Output Files
 
 1. `deep_review_<date>.md` — full 12-criteria report
@@ -363,6 +457,8 @@ Minor:
 3. `revision_plan_<date>.xlsx` — prioritized action list
 4. `reporting_guideline_compliance_<date>.xlsx` — checklist
 5. `stats_scrutiny_<date>.md` — biostatistician review
+6. `claim_evidence_matrix_<date>.csv` — Mode 7
+7. `reference_ledger_<date>.csv` — Mode 8
 
 ---
 
@@ -382,3 +478,4 @@ Minor:
 - `manuscript-writer` (Mode 6 wrapper เรียกใช้ skill นี้)
 - `response-to-reviewers` (หลัง revise actual reviewer comments)
 - `manuscript-master-workflow` Mode B (peer review 7 หมวด — สามารถใช้ร่วมได้)
+- `scientific-peer-review` (personal skill, ~/.claude/skills) — ใช้แทน skill นี้เมื่อได้รับเชิญเป็น reviewer ให้วารสาร; สคริปต์ `validate_claim_evidence.py` ของ Mode 7 อยู่ในนั้น
