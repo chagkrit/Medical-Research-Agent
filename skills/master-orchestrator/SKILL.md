@@ -23,6 +23,18 @@ metadata:
 
 ---
 
+## Execution Discipline — decompose ตามความเสี่ยง, decide ตาม blocker จริง
+
+8 stage ข้างล่างเป็น *ลำดับ deliverable* ไม่ใช่ลำดับ *ที่ต้องคิด*. เบื้องหลังทุก stage คือ loop เดียว: **decompose (หา uncertainty ที่แบกน้ำหนัก) → verify → decide (action ที่ลดความเสี่ยง reviewer-fatal มากสุด)** ทำซ้ำจน submit หรือ blocked จริง
+
+1. **Decompose ตามความเสี่ยง ไม่ใช่ตาม IMRAD** — งานยากเพราะ 1–2 อย่างตัดสินว่าทั้งเรื่องยืนได้ไหม (data จริงไหม, effect estimate ป้องกันได้ไหม, design ตอบคำถามไหม). Attack อันนั้นก่อน — **ทำ analysis + verify ก่อน Introduction** เพราะ Discussion เขียนไม่ได้จนกว่าจะรู้ว่า primary result คืออะไรจริง
+2. **Slice vertically** — เอา 1 result ให้ถึง publish-quality (ตัวเลข verified → figure → ประโยคที่รายงานมัน) ก่อนกระจายไป secondary outcomes. อย่าเขียน Methods หมด → Results หมด → ค่อยพบว่า estimate ขยับ
+3. **Decide ตาม blocker จริง** — blocker มักมีไม่กี่อย่างและรู้อยู่แล้ว: **IRB / ethics, author list + ORCID, funding statement, figure export (TIFF/vector ตาม spec), journal + cover letter.** เมื่อ analysis + draft เสร็จ action ถัดไปคือเคลียร์อันใดอันหนึ่งใน *นี้* ไม่ใช่ขัดเกลา paragraph
+4. **Change approach อย่า push harder** — result reconcile ไม่ได้ = re-reconcile จาก source (ไม่ใช่จูน do-file); claim โดน imagined objection ซ้ำ ๆ = overreach / confound → walk back ด้วย analysis ไม่ใช่ reword; CI implausible = wrong measure → เปลี่ยน measure
+5. **หยุดถามเฉพาะสิ่งที่ผู้เขียนต้อง supply** — IRB, author names/order, ORCID, funding, journal choice. อย่าเดาใส่ manuscript
+
+---
+
 ## Pipeline Overview (8 Stages)
 
 ```

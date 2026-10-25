@@ -1,264 +1,210 @@
-# Diagnostic Accuracy Analysis — STARD Compliant
+# Diagnostic Accuracy Analysis — STARD Compliant (STATA 18)
 # การวิเคราะห์ความแม่นยำในการวินิจฉัย
 
-## 1. Core Metrics
+> **ทุก code ในไฟล์นี้ใช้ STATA 18** — เริ่มทุก do-file ด้วย `version 18` + `set scheme s2color`
 
-```python
-import numpy as np
-import pandas as pd
-from sklearn.metrics import (roc_auc_score, roc_curve, confusion_matrix,
-                              average_precision_score, precision_recall_curve)
-import matplotlib.pyplot as plt
-from scipy import stats
+## 1. Core Metrics (Sensitivity, Specificity, PPV, NPV)
 
-def diagnostic_accuracy_full(y_true, y_score, test_name="Test"):
-    """
-    วิเคราะห์ diagnostic accuracy ครบสมบูรณ์ตาม STARD 2015
-    """
-    # ROC
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
-    auc = roc_auc_score(y_true, y_score)
+```stata
+version 18
+set more off
+set scheme s2color
 
-    # Youden's Index — optimal cutpoint
-    youden = tpr - fpr
-    optimal_idx = np.argmax(youden)
-    optimal_threshold = thresholds[optimal_idx]
+// ─── 2×2 Table Analysis (at chosen cutpoint) ─────────────────────
+// disease: 1=positive, 0=negative (reference standard)
+// test_pos: 1=test positive, 0=test negative (index test)
+diagt disease test_pos
+// Output: Sensitivity, Specificity, PPV, NPV, LR+, LR-, DOR + 95% CI
 
-    # Confusion matrix at optimal cutpoint
-    y_pred = (y_score >= optimal_threshold).astype(int)
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    n = len(y_true)
+// ─── Wilson 95% CI for individual metrics ─────────────────────────
+// Sensitivity = TP/(TP+FN): 150 TP out of 175 positives
+cii 175 150, wilson
 
-    # Core metrics
-    sensitivity = tp / (tp + fn)
-    specificity = tn / (tn + fp)
-    ppv = tp / (tp + fp) if (tp + fp) > 0 else 0
-    npv = tn / (tn + fn) if (tn + fn) > 0 else 0
-    plr = sensitivity / (1 - specificity) if (1-specificity) > 0 else np.inf
-    nlr = (1 - sensitivity) / specificity if specificity > 0 else np.inf
-    dor = plr / nlr if nlr > 0 else np.inf
-    accuracy = (tp + tn) / n
+// Specificity = TN/(TN+FP): 95 TN out of 110 negatives
+cii 110 95, wilson
 
-    # 95% CIs using Wilson score interval
-    def wilson_ci(p, n, z=1.96):
-        denominator = 1 + z**2/n
-        center = (p + z**2/(2*n)) / denominator
-        margin = (z * np.sqrt(p*(1-p)/n + z**2/(4*n**2))) / denominator
-        return max(0, center - margin), min(1, center + margin)
-
-    sens_ci = wilson_ci(sensitivity, tp + fn)
-    spec_ci = wilson_ci(specificity, tn + fp)
-    ppv_ci = wilson_ci(ppv, tp + fp)
-    npv_ci = wilson_ci(npv, tn + fn)
-
-    # AUC 95% CI (DeLong method via bootstrapping)
-    n_boot = 1000
-    auc_boots = []
-    for _ in range(n_boot):
-        idx = np.random.choice(len(y_true), len(y_true), replace=True)
-        try:
-            auc_boots.append(roc_auc_score(y_true[idx], y_score[idx]))
-        except:
-            pass
-    auc_ci = (np.percentile(auc_boots, 2.5), np.percentile(auc_boots, 97.5))
-
-    # Print results
-    print(f"\n{'='*60}")
-    print(f"DIAGNOSTIC ACCURACY REPORT: {test_name}")
-    print(f"{'='*60}")
-    print(f"Optimal cutpoint: {optimal_threshold:.4f} (Youden index = {youden[optimal_idx]:.4f})")
-    print(f"\n2×2 Contingency Table:")
-    print(f"  TP = {tp}  FP = {fp}")
-    print(f"  FN = {fn}  TN = {tn}")
-    print(f"\nCore Metrics (95% CI):")
-    print(f"  AUC:         {auc:.3f} ({auc_ci[0]:.3f}–{auc_ci[1]:.3f})")
-    print(f"  Sensitivity: {sensitivity:.3f} ({sens_ci[0]:.3f}–{sens_ci[1]:.3f})")
-    print(f"  Specificity: {specificity:.3f} ({spec_ci[0]:.3f}–{spec_ci[1]:.3f})")
-    print(f"  PPV:         {ppv:.3f} ({ppv_ci[0]:.3f}–{ppv_ci[1]:.3f})")
-    print(f"  NPV:         {npv:.3f} ({npv_ci[0]:.3f}–{npv_ci[1]:.3f})")
-    print(f"  +LR:         {plr:.2f}")
-    print(f"  -LR:         {nlr:.3f}")
-    print(f"  DOR:         {dor:.1f}")
-    print(f"  Accuracy:    {accuracy:.3f}")
-
-    return {
-        'auc': auc, 'auc_ci': auc_ci,
-        'sensitivity': sensitivity, 'sens_ci': sens_ci,
-        'specificity': specificity, 'spec_ci': spec_ci,
-        'ppv': ppv, 'ppv_ci': ppv_ci,
-        'npv': npv, 'npv_ci': npv_ci,
-        'plr': plr, 'nlr': nlr, 'dor': dor,
-        'optimal_threshold': optimal_threshold,
-        'fpr': fpr, 'tpr': tpr, 'thresholds': thresholds
-    }
+// ─── Full contingency table ────────────────────────────────────────
+tabulate disease test_pos, row col exact
 ```
 
 ## 2. ROC Curve — Publication Quality
 
-```python
-def plot_roc_comparison(models_dict, title="ROC Curves"):
-    """
-    models_dict = {'Model A': (y_true, y_score), 'Model B': (y_true, y_score)}
-    """
-    fig, ax = plt.subplots(figsize=(8, 7))
-    colors = ['#2196F3', '#F44336', '#4CAF50', '#FF9800', '#9C27B0']
+```stata
+// ─── ROC after logistic model ─────────────────────────────────────
+logistic disease age bmi score1 score2
+predict pred_prob, pr
+lroc, scheme(s2color)                    ///
+    title("ROC Curve: Prediction Model")
+graph export "fig_roc.tif", as(tif) replace width(3000)
 
-    for (name, (y_true, y_score)), color in zip(models_dict.items(), colors):
-        fpr, tpr, _ = roc_curve(y_true, y_score)
-        auc = roc_auc_score(y_true, y_score)
+// ─── ROC from continuous score directly ───────────────────────────
+roctab disease score, summary graph     ///
+    scheme(s2color)                      ///
+    title("ROC Curve: Biomarker Score")
+graph export "fig_roc_score.tif", as(tif) replace width(3000)
+// Output: AUC + 95% CI + SE
 
-        # Bootstrap CI
-        aucs = [roc_auc_score(y_true[np.random.choice(len(y_true), len(y_true), replace=True)],
-                               y_score[np.random.choice(len(y_score), len(y_score), replace=True)])
-                for _ in range(1000)]
-        ci = (np.percentile(aucs, 2.5), np.percentile(aucs, 97.5))
+// ─── Youden optimal cutpoint ─────────────────────────────────────
+roctab disease score, detail
+// Column "Youden" = sensitivity + specificity - 1
+// Row with max Youden = optimal cutpoint
 
-        ax.plot(fpr, tpr, color=color, linewidth=2.5,
-                label=f'{name}\nAUC = {auc:.3f} (95% CI {ci[0]:.3f}–{ci[1]:.3f})')
-
-    # Reference line
-    ax.plot([0, 1], [0, 1], 'k--', linewidth=1, alpha=0.5, label='Reference (AUC = 0.5)')
-
-    ax.set_xlabel('1 – Specificity (False Positive Rate)', fontsize=13)
-    ax.set_ylabel('Sensitivity (True Positive Rate)', fontsize=13)
-    ax.set_title(title, fontsize=15, fontweight='bold')
-    ax.legend(loc='lower right', fontsize=11)
-    ax.grid(True, alpha=0.3)
-    ax.set_xlim([-0.02, 1.02])
-    ax.set_ylim([-0.02, 1.05])
-
-    plt.tight_layout()
-    plt.savefig('roc_curves.png', dpi=300, bbox_inches='tight')
+// ─── Cross-validation (leave-one-out) ────────────────────────────
+rocgold disease score, detail
 ```
 
 ## 3. DeLong Test — Comparing Two AUCs
 
-```python
-# Compare 2 ROC curves statistically
-# Python implementation
-def delong_test(y_true, y_score1, y_score2):
-    """
-    DeLong et al. (1988) method for comparing AUCs
-    Returns: z-statistic, p-value
-    """
-    from sklearn.metrics import roc_auc_score
-    import numpy as np
+```stata
+// ─── Compare two ROC curves (paired design) ──────────────────────
+// score1, score2: predictions from two models, same patients
+roccomp disease score1 score2,           ///
+    graph scheme(s2color)                  ///
+    title("ROC Comparison: Model 1 vs Model 2") ///
+    legend(order(1 "Model 1" 2 "Model 2") ring(0) pos(4))
+graph export "fig_roc_compare.tif", as(tif) replace width(3000)
+// Output: AUC1, AUC2, chi2, p (DeLong test)
 
-    n = len(y_true)
-    auc1 = roc_auc_score(y_true, y_score1)
-    auc2 = roc_auc_score(y_true, y_score2)
-
-    # Bootstrap-based comparison
-    diffs = []
-    for _ in range(5000):
-        idx = np.random.choice(n, n, replace=True)
-        try:
-            a1 = roc_auc_score(y_true[idx], y_score1[idx])
-            a2 = roc_auc_score(y_true[idx], y_score2[idx])
-            diffs.append(a1 - a2)
-        except:
-            pass
-
-    observed_diff = auc1 - auc2
-    se = np.std(diffs)
-    z = observed_diff / se
-    p = 2 * (1 - stats.norm.cdf(abs(z)))
-
-    print(f"AUC1 = {auc1:.3f}, AUC2 = {auc2:.3f}")
-    print(f"Difference = {observed_diff:.3f} (95% CI: {observed_diff - 1.96*se:.3f}–{observed_diff + 1.96*se:.3f})")
-    print(f"z = {z:.3f}, p = {p:.4f}")
-    return z, p
+// ─── Unpaired ROC comparison ─────────────────────────────────────
+roccomp disease score1 score2, unpaired graph
 ```
 
 ## 4. Calibration Assessment
 
-```python
-from sklearn.calibration import calibration_curve
+```stata
+// ─── Hosmer-Lemeshow Goodness-of-Fit ─────────────────────────────
+logistic disease age bmi score1 score2
+estat gof, group(10)
+// H0: calibration adequate; p > 0.05 = good calibration
+// Report: χ²(8) = [value], p = [value]
 
-def plot_calibration(y_true, y_prob, model_name, n_bins=10):
-    fraction_of_positives, mean_predicted_value = calibration_curve(
-        y_true, y_prob, n_bins=n_bins, strategy='uniform'
-    )
+// ─── Calibration Plot (publication-quality) ───────────────────────
+ssc install pmcalplot, replace
+predict pred_prob, pr
+pmcalplot pred_prob disease,              ///
+    ci                                     ///
+    title("Calibration Plot")             ///
+    scheme(s2color)                        ///
+    xtitle("Predicted Probability")        ///
+    ytitle("Observed Proportion")
+graph export "fig_calibration.tif", as(tif) replace width(3000)
+// Shows: observed vs predicted with CI + ideal line
 
-    fig, ax = plt.subplots(figsize=(8, 7))
-    ax.plot(mean_predicted_value, fraction_of_positives,
-            'b-o', linewidth=2, label=model_name)
-    ax.plot([0, 1], [0, 1], 'k--', label='Perfect calibration')
+// ─── Calibration slope + intercept ───────────────────────────────
+// Calibration-in-the-large (intercept = 0; slope = 1 = perfect)
+logit pred_logit = logit(pred_prob)
+regress disease pred_logit
+// Intercept ≈ 0 and slope ≈ 1 = excellent calibration
 
-    # Hosmer-Lemeshow test
-    # Divide into 10 deciles
-    df_cal = pd.DataFrame({'y_true': y_true, 'y_prob': y_prob})
-    df_cal['decile'] = pd.qcut(df_cal['y_prob'], 10, labels=False, duplicates='drop')
-
-    hl_stat = 0
-    for decile in df_cal['decile'].unique():
-        group = df_cal[df_cal['decile'] == decile]
-        o = group['y_true'].sum()
-        e = group['y_prob'].sum()
-        hl_stat += (o - e)**2 / (e * (1 - e/len(group)))
-
-    p_hl = 1 - stats.chi2.cdf(hl_stat, df=8)
-    ax.text(0.05, 0.95, f'Hosmer-Lemeshow: χ²={hl_stat:.2f}, p={p_hl:.3f}',
-            transform=ax.transAxes, fontsize=11,
-            bbox=dict(boxstyle='round', facecolor='lightyellow'))
-
-    ax.set_xlabel('Mean Predicted Probability', fontsize=13)
-    ax.set_ylabel('Fraction of Positives', fontsize=13)
-    ax.set_title('Calibration Plot', fontsize=15)
-    ax.legend()
-    plt.tight_layout()
-    plt.savefig('calibration.png', dpi=300)
+// ─── Brier Score ─────────────────────────────────────────────────
+gen brier_i = (disease - pred_prob)^2
+summarize brier_i
+di "Brier Score = " r(mean)
+// < 0.25 = better than chance; lower = better
 ```
 
 ## 5. Decision Curve Analysis (DCA)
 
-```python
-def decision_curve_analysis(y_true, y_prob, thresholds=None):
-    """
-    DCA: ประเมิน clinical utility ของ prediction model
-    """
-    if thresholds is None:
-        thresholds = np.linspace(0.01, 0.99, 99)
+```stata
+// ─── DCA (user-written command) ───────────────────────────────────
+ssc install dca, replace
 
-    n = len(y_true)
-    prevalence = y_true.mean()
-    net_benefits = []
+predict pred_prob, pr
 
-    for threshold in thresholds:
-        y_pred = (y_prob >= threshold).astype(int)
-        tp = ((y_pred == 1) & (y_true == 1)).sum()
-        fp = ((y_pred == 1) & (y_true == 0)).sum()
-        nb = (tp/n) - (fp/n) * (threshold/(1-threshold))
-        net_benefits.append(nb)
+// Basic DCA
+dca disease pred_prob,                    ///
+    smooth                                 ///
+    title("Decision Curve Analysis")       ///
+    scheme(s2color)                        ///
+    ytitle("Net Benefit")                  ///
+    xtitle("Threshold Probability")
+graph export "fig_dca.tif", as(tif) replace width(3000)
 
-    # Treat all
-    treat_all = [prevalence - (1-prevalence) * (t/(1-t)) for t in thresholds]
+// ─── DCA comparing multiple models ───────────────────────────────
+// Predict from each model first
+logistic disease score1
+predict prob_model1, pr
+logistic disease score1 score2 age bmi
+predict prob_model2, pr
 
-    fig, ax = plt.subplots(figsize=(10, 7))
-    ax.plot(thresholds, net_benefits, 'b-', linewidth=2.5, label='Model')
-    ax.plot(thresholds, treat_all, 'r--', linewidth=1.5, label='Treat all')
-    ax.axhline(y=0, color='gray', linestyle='--', linewidth=1, label='Treat none')
-
-    ax.set_xlabel('Threshold Probability', fontsize=13)
-    ax.set_ylabel('Net Benefit', fontsize=13)
-    ax.set_title('Decision Curve Analysis', fontsize=15)
-    ax.legend(fontsize=12)
-    ax.set_xlim([0, 1])
-    ax.set_ylim([-0.05, max(net_benefits)*1.2])
-    plt.tight_layout()
-    plt.savefig('dca.png', dpi=300)
+dca disease prob_model1 prob_model2,      ///
+    smooth                                 ///
+    xrange(0.05 0.35)                     ///
+    title("Decision Curve Analysis: Model Comparison") ///
+    legend(order(1 "Treat None" 2 "Treat All" ///
+                 3 "Clinical Score" 4 "Full Model") ring(0)) ///
+    scheme(s2color)
+graph export "fig_dca_compare.tif", as(tif) replace width(3000)
 ```
 
-## 6. Results Reporting Template (STARD 2015)
+## 6. Net Reclassification Improvement (NRI) and IDI
+
+```stata
+// ─── NRI: ประเมิน improvement เมื่อเพิ่ม biomarker ──────────────
+ssc install nri_ipcw, replace    // สำหรับ censored survival outcomes
+// หรือ ใช้ manual NRI สำหรับ binary outcome
+
+// Manual NRI (binary outcome, two risk categories)
+// Category: < 0.20 = low risk; ≥ 0.20 = high risk
+gen riskcat_m1 = (prob_model1 >= 0.20)
+gen riskcat_m2 = (prob_model2 >= 0.20)
+
+// NRI for events
+count if disease==1 & riskcat_m2 > riskcat_m1   // correctly reclassified up
+count if disease==1 & riskcat_m2 < riskcat_m1   // incorrectly reclassified down
+
+// NRI for non-events
+count if disease==0 & riskcat_m2 < riskcat_m1   // correctly reclassified down
+count if disease==0 & riskcat_m2 > riskcat_m1   // incorrectly reclassified up
+
+// Continuous NRI (no categories)
+// NRI+ = P(↑ | event) − P(↑ | non-event)
+// IDI = Integrated Discrimination Improvement
+gen idi_i = (prob_model2 - prob_model1) * (disease==1) - ///
+            (prob_model2 - prob_model1) * (disease==0)
+summarize idi_i
+di "IDI = " r(mean)
+```
+
+## 7. Multiple Cutpoints (Sensitivity Table)
+
+```stata
+// ─── Roctab detail: สร้าง table ทุก cutpoint ────────────────────
+roctab disease score, detail nograph
+// เลือก cutpoint จาก: max Youden / max Sn ที่ Sp ≥ 90% / clinical threshold
+
+// ─── Predefined cutpoints ─────────────────────────────────────────
+foreach cut in 0.2 0.3 0.4 0.5 {
+    gen test_cut`cut'100 = (pred_prob >= `cut')
+    diagt disease test_cut`cut'100
+    drop test_cut`cut'100
+}
+```
+
+## 8. Results Reporting Template (STARD 2015)
 
 ```
-The [index test] was evaluated against [reference standard] in [n] participants.
+Diagnostic Accuracy Results:
+"The [index test] was evaluated against [reference standard] in [n] participants
+([n1] with the condition, [n0] without).
+
 The area under the receiver operating characteristic curve (AUROC) was 0.XX
 (95% CI 0.XX–0.XX). At the optimal cutpoint of [value] (Youden index = [value]),
 the sensitivity was XX% (95% CI XX–XX%) and specificity was XX% (95% CI XX–XX%).
-The positive predictive value was XX% (95% CI XX–XX%) and the negative predictive
+The positive predictive value was XX% (95% CI XX–XX%) and negative predictive
 value was XX% (95% CI XX–XX%). The positive and negative likelihood ratios were
-X.X and X.XX, respectively, corresponding to a diagnostic odds ratio of X.X.
-Calibration was assessed using the Hosmer-Lemeshow test (χ²([df]) = [value], p = [value]),
-indicating [adequate/inadequate] calibration.
+X.X and X.XX, respectively.
+
+Model calibration was good, as assessed by the Hosmer-Lemeshow test
+(χ²(8) = [value], p = [value]). Decision curve analysis demonstrated net clinical
+benefit of [Model] over the treat-all and treat-none strategies across threshold
+probabilities of [X%–Y%]."
+
+Methods statement:
+"ROC curves were constructed and areas under the curve (AUC) compared using
+the DeLong method (roccomp). Model calibration was assessed visually with
+calibration plots and formally with the Hosmer-Lemeshow goodness-of-fit test.
+Decision curve analysis was performed using the dca command. Statistical
+analyses were performed using STATA version 18 (StataCorp, College Station,
+TX, USA)."
 ```
